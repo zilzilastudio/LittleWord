@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interactive WebAR Cylinder Art</title>
+
+  <!-- Libraries -->
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+
+  <style>
+    body { margin: 0; overflow: hidden; }
+    /* Hide off-screen p5 canvas */
+    #p5-container { display: none; }
+  </style>
+
+  <!-- Drag/Swipe to Spin Cylinder Script -->
+  <script>
+    AFRAME.registerComponent('drag-rotate', {
+      init: function () {
+        let el = this.el;
+        let isDragging = false;
+        let lastX = 0;
+
+        // Mouse Drag Support
+        window.addEventListener('mousedown', (e) => { isDragging = true; lastX = e.clientX; });
+        window.addEventListener('mouseup', () => { isDragging = false; });
+        window.addEventListener('mousemove', (e) => {
+          if (!isDragging) return;
+          let deltaX = e.clientX - lastX;
+          let rot = el.getAttribute('rotation');
+          el.setAttribute('rotation', { x: rot.x, y: rot.y + deltaX * 0.8, z: rot.z });
+          lastX = e.clientX;
+        });
+
+        // Mobile Touch Swipe Support
+        window.addEventListener('touchstart', (e) => {
+          if (e.touches.length === 1) { isDragging = true; lastX = e.touches[0].clientX; }
+        });
+        window.addEventListener('touchend', () => { isDragging = false; });
+        window.addEventListener('touchmove', (e) => {
+          if (!isDragging || e.touches.length !== 1) return;
+          let deltaX = e.touches[0].clientX - lastX;
+          let rot = el.getAttribute('rotation');
+          el.setAttribute('rotation', { x: rot.x, y: rot.y + deltaX * 0.8, z: rot.z });
+          lastX = e.touches[0].clientX;
+        });
+      }
+    });
+  </script>
+</head>
+<body>
+
+  <!-- Container for p5.js canvas -->
+  <div id="p5-container"></div>
+
+  <!-- A-Frame WebAR Scene -->
+  <a-scene 
+    mindar-image="imageTargetSrc: ./targets.mind;" 
+    color-space="sRGB" 
+    renderer="colorManagement: true, physicallyCorrectLights: true" 
+    vr-mode-ui="enabled: false" 
+    device-orientation-permission-ui="enabled: false">
+
+    <a-assets>
+      <canvas id="ar-texture-canvas" width="600" height="600"></canvas>
+    </a-assets>
+
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+    <!-- AR Target Anchor with Drag Rotation -->
+    <a-entity mindar-image-target="targetIndex: 0" drag-rotate>
+      
+      <!-- OPTION 1: 3D CYLINDER SURFACE WRAPPING THE FLAT 2D VISUAL -->
+      <a-cylinder 
+        id="ar-cylinder" 
+        src="#ar-texture-canvas" 
+        position="0 0 0.2" 
+        radius="0.5" 
+        height="1" 
+        open-ended="true" 
+        side="double" 
+        material="transparent: true; opacity: 0.95;">
+      </a-cylinder>
+
+    </a-entity>
+  </a-scene>
+
+  <!-- Load flat 2D p5 sketch -->
+  <script src="sketch.js"></script>
+
+  <!-- Sync Bridge (p5.js -> A-Frame Cylinder Texture) -->
+  <script>
+    const textureCanvas = document.getElementById('ar-texture-canvas');
+    const ctx = textureCanvas.getContext('2d');
+
+    function syncCanvasToAR() {
+      const p5Canvas = document.getElementById('p5-canvas');
+      if (p5Canvas) {
+        ctx.clearRect(0, 0, 600, 600);
+        ctx.drawImage(p5Canvas, 0, 0);
+
+        const cylinder = document.getElementById('ar-cylinder');
+        if (cylinder && cylinder.getObject3d('mesh')) {
+          const material = cylinder.getObject3d('mesh').material;
+          if (material && material.map) {
+            material.map.needsUpdate = true;
+          }
+        }
+      }
+      requestAnimationFrame(syncCanvasToAR);
+    }
+    requestAnimationFrame(syncCanvasToAR);
+  </script>
+
+</body>
+</html>
