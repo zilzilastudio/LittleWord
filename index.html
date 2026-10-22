@@ -5,18 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Zilzila Studio - WebAR Experience</title>
 
-  <!-- Libraries -->
-  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  <!-- Stable A-Frame 1.2.0 + MindAR 1.2.5 CDN Combo -->
+  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
 
   <style>
     body { margin: 0; overflow: hidden; }
-    #p5-container { display: none; } /* Hidden 2D buffer container */
+    #p5-container { display: none; }
   </style>
 
   <script>
-    // 1. Texture Bridge Component: Syncs live p5 canvas into A-Frame material
+    // Live p5.js Canvas Texture Bridge Component
     AFRAME.registerComponent('p5-canvas-texture', {
       init: function () {
         this.canvas = document.getElementById('p5-canvas');
@@ -41,7 +41,7 @@
       }
     });
 
-    // 2. Touch / Mouse Swipe Control to Rotate 3D Fountain on Target Card
+    // Touch / Mouse Rotation Control
     AFRAME.registerComponent('drag-rotate', {
       init: function () {
         let el = this.el;
@@ -73,28 +73,24 @@
     });
   </script>
 
-  <!-- Load your external 2D p5.js sketch -->
   <script src="./sketch.js"></script>
 </head>
 <body>
 
-  <!-- Off-screen container for p5.js canvas -->
   <div id="p5-container"></div>
 
-  <!-- A-Frame WebAR Scene -->
   <a-scene 
     mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: yes; uiError: yes;" 
     color-space="sRGB" 
-    renderer="colorManagement: true, physicallyCorrectLights: true" 
+    embedded 
     vr-mode-ui="enabled: false" 
     device-orientation-permission-ui="enabled: false">
 
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-    <!-- AR Target Anchor (Triggers when camera scans targets.mind) -->
     <a-entity mindar-image-target="targetIndex: 0" drag-rotate>
       
-      <!-- Solid Blue Ground Floor Card (Flat on X-Z ground plane) -->
+      <!-- Solid Blue Ground Floor Card -->
       <a-plane 
         position="0 -0.5 0" 
         rotation="-90 0 0" 
@@ -103,7 +99,7 @@
         color="#1642FA">
       </a-plane>
 
-      <!-- Front View 2D Fountain Plane -->
+      <!-- Front View Fountain Plane -->
       <a-plane 
         p5-canvas-texture 
         position="0 0 0.01" 
@@ -111,7 +107,7 @@
         height="1">
       </a-plane>
 
-      <!-- Back View 2D Fountain Plane (Double-sided visibility) -->
+      <!-- Back View Fountain Plane (360° visibility) -->
       <a-plane 
         p5-canvas-texture 
         position="0 0 -0.01" 
